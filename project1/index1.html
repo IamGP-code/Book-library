@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <title>Test Page</title>
+  <link rel="stylesheet" href="style1.css" />
+</head>
+<body>
+  <h1>Hello World</h1>
+  <div style="display:flex; gap: 20px;">
+    <aside style="width:200px; background:#eee; padding:10px;">
+      <input placeholder="Search..." id="searchInput" /><br /><br />
+      <select id="categoryFilter">
+        <option value="">All Categories</option>
+        <option value="Classic">Classic</option>
+        <option value="Fiction">Fiction</option>
+        <option value="Fantasy">Fantasy</option>
+      </select><br /><br />
+      <button id="addBookBtn">Add Book</button>
+    </aside>
+    <main style="background:#eee; padding:10px; flex:1;">
+      <div id="bookGallery"></div>
+    </main>
+  </div>
+
+  <!-- Details Modal -->
+  <div class="modal-overlay" id="detailsModal">
+    <div class="modal-content">
+      <img id="detailsCover" src="" alt="Book Cover" />
+      <h2 id="detailsTitle"></h2>
+      <h4 id="detailsAuthor"></h4>
+      <p id="detailsDescription"></p>
+      <button id="closeDetailsBtn">Close</button>
+    </div>
+  </div>
+
+  <!-- Edit/Add Modal -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal-content">
+      <form id="bookForm">
+        <input type="hidden" id="bookId" />
+        <label for="titleInput">Title:</label>
+        <input type="text" id="titleInput" required />
+        <label for="authorInput">Author:</label>
+        <input type="text" id="authorInput" required />
+        <label for="categoryInput">Category:</label>
+        <select id="categoryInput" required>
+          <option value="">Select Category</option>
+          <option value="Classic">Classic</option>
+          <option value="Fiction">Fiction</option>
+          <option value="Fantasy">Fantasy</option>
+          <option value="__add_new__">Add new category...</option>
+        </select>
+        <label for="fileInput">Upload PDF:</label>
+        <input type="file" id="fileInput" accept="application/pdf" required />
+        <label for="descriptionInput">Description:</label>
+        <textarea id="descriptionInput" rows="4" required></textarea>
+        <div class="form-actions">
+          <button type="submit" class="save-btn">Save</button>
+          <button type="button" class="cancel-btn" id="cancelEditBtn">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="script1.js"></script>
+</body>
+</html>
