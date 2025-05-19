@@ -1,4 +1,29 @@
-import { uploadPDFAndGetURL } from './firebase-upload.js';
+// import { uploadPDFAndGetURL } from './firebase-upload.js';
+// // import { pdfjsLib } from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/+esm';
+// import * as pdfjsLib from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.min.mjs';
+// import pdfjsWorker from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.worker.min.mjs';
+// pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.worker.min.mjs';
+
+import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js';
+
+// import * as pdfjsLib from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.min.mjs';
+// pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.worker.min.mjs';
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.worker.min.js';
+
+
+const books = [
+  {
+    id: 1,
+    title: "Sample Book",
+    author: "John Doe",
+    category: "Fiction",
+    description: "A test book for display.",
+    cover: "https://via.placeholder.com/150", // You can replace this with a real image
+    pdfUrl: "#"
+  }
+];
+ // or preload with sample data for testing
+
 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -54,6 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
       bookGallery.appendChild(card);
     });
   }
+console.log('Rendering books:', currentBooks);
 
   categoryInput.addEventListener('change', () => {
     if (categoryInput.value === '__add_new__') {
@@ -119,27 +145,41 @@ document.addEventListener('DOMContentLoaded', () => {
     editModal.style.display = 'none';
   });
 
-  async function getFirstPageImage(file) {
-    const fileReader = new FileReader();
-    return new Promise((resolve, reject) => {
-      fileReader.onload = async function () {
-        const typedarray = new Uint8Array(this.result);
-        const loadingTask = pdfjsLib.getDocument({ data: typedarray });
-        const pdf = await loadingTask.promise;
-        const page = await pdf.getPage(1);
-        const viewport = page.getViewport({ scale: 1.5 });
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-        await page.render({ canvasContext: context, viewport }).promise;
-        const imageDataUrl = canvas.toDataURL();
-        resolve(imageDataUrl);
-      };
-      fileReader.onerror = reject;
-      fileReader.readAsArrayBuffer(file);
-    });
-  }
+  // async function getFirstPageImage(file) {
+  //   const fileReader = new FileReader();
+  //   return new Promise((resolve, reject) => {
+  //     fileReader.onload = async function () {
+  //       const typedarray = new Uint8Array(this.result);
+  //       const loadingTask = pdfjsLib.getDocument({ data: typedarray });
+  //       const pdf = await loadingTask.promise;
+  //       const page = await pdf.getPage(1);
+  //       const viewport = page.getViewport({ scale: 1.5 });
+  //       const canvas = document.createElement('canvas');
+  //       const context = canvas.getContext('2d');
+  //       canvas.height = viewport.height;
+  //       canvas.width = viewport.width;
+  //       await page.render({ canvasContext: context, viewport }).promise;
+  //       const imageDataUrl = canvas.toDataURL();
+  //       resolve(imageDataUrl);
+  //     };
+  //     fileReader.onerror = reject;
+  //     fileReader.readAsArrayBuffer(file);
+  //   });
+  // }
+async function getFirstPageImage(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const page = await pdf.getPage(1);
+  const viewport = page.getViewport({ scale: 1.5 });
+
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  canvas.height = viewport.height;
+  canvas.width = viewport.width;
+
+  await page.render({ canvasContext: context, viewport }).promise;
+  return canvas.toDataURL();
+}
 
   bookForm.addEventListener('submit', async e => {
     e.preventDefault();

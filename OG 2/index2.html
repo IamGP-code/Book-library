@@ -3,11 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.min.js"></script>
+<script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.worker.min.js';
+</script>
+
   <title>Test Page</title>
   <link rel="stylesheet" href="styles2.css">
 </head>
 <body>
-  <h1>Hello World!!</h1>
+  <h1>Hello World!!!</h1>
   <div style="display:flex; gap: 20px;">
     <aside style="width:200px; background:#eee; padding:10px;">
       <input placeholder="Search..." id="searchInput" /><br /><br />
