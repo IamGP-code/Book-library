@@ -1,33 +1,24 @@
-// import { uploadPDFAndGetURL } from './firebase-upload.js';
-// // import { pdfjsLib } from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/+esm';
-// import * as pdfjsLib from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.min.mjs';
-// import pdfjsWorker from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.worker.min.mjs';
-// pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.worker.min.mjs';
-
-import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js';
-
-// import * as pdfjsLib from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.min.mjs';
-// pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.worker.min.mjs';
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.worker.min.js';
-
-
-const books = [
-  {
-    id: 1,
-    title: "Sample Book",
-    author: "John Doe",
-    category: "Fiction",
-    description: "A test book for display.",
-    cover: "https://via.placeholder.com/150", // You can replace this with a real image
-    pdfUrl: "#"
-  }
-];
- // or preload with sample data for testing
-
-
-
 document.addEventListener('DOMContentLoaded', () => {
+  // Add to script.js, inside DOMContentLoaded
+const exportBtn = document.createElement('button');
+exportBtn.textContent = 'Export Books';
+exportBtn.className = 'export-btn';
+document.querySelector('.controls').appendChild(exportBtn);
+exportBtn.addEventListener('click', () => {
+  const dataStr = JSON.stringify(books);
+  const link = document.createElement('a');
+  link.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+  link.download = 'books.json';
+  link.click();
+});
+    // Ensure pdf.js worker is set
+  if (typeof pdfjsLib !== 'undefined') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+  }
+
   const masterPassword = 'admin123';
+  const cloudinaryUploadPreset = 'bookgallery_preset'; // Replace with your Cloudinary unsigned upload preset
+  const cloudinaryCloudName = 'doof2pk9x'; // Replace with your Cloudinary cloud name
   const bookGallery = document.getElementById('bookGallery');
   const detailsModal = document.getElementById('detailsModal');
   const editModal = document.getElementById('editModal');
@@ -38,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const detailsDescription = document.getElementById('detailsDescription');
   const detailsCategory = document.getElementById('detailsCategory');
   const closeDetailsBtn = document.getElementById('closeDetailsBtn');
+  const downloadPdfBtn = document.getElementById('downloadPdfBtn');
   const bookForm = document.getElementById('bookForm');
   const bookIdInput = document.getElementById('bookId');
   const titleInput = document.getElementById('titleInput');
@@ -48,8 +40,60 @@ document.addEventListener('DOMContentLoaded', () => {
   const searchInput = document.getElementById('searchInput');
   const categoryFilter = document.getElementById('categoryFilter');
   const addBookBtn = document.getElementById('addBookBtn');
+  
+  // Load books from localStorage or use default
+  let books = JSON.parse(localStorage.getItem('books')) || [
+    {
+      id: 1,
+      title: 'The Great Gatsby',
+      author: 'F. Scott Fitzgerald',
+      cover: 'https://covers.openlibrary.org/b/id/7352161-L.jpg',
+      category: 'Classic',
+      description: 'A novel about the American dream and high society in the 1920s.',
+      pdf: null
+    },
+    {
+      id: 2,
+      title: 'To Kill a Mockingbird',
+      author: 'Harper Lee',
+      cover: 'https://covers.openlibrary.org/b/id/8228691-L.jpg',
+      category: 'Classic',
+      description: 'A story of racial injustice in the Deep South seen through a child’s eyes.',
+      pdf: null
+    },
+    {
+      id: 3,
+      title: '1984',
+      author: 'George Orwell',
+      cover: 'https://covers.openlibrary.org/b/id/7222246-L.jpg',
+      category: 'Fiction',
+      description: 'A dystopian novel about totalitarian regime and surveillance.',
+      pdf: null
+    },
+    {
+      id: 4,
+      title: 'Harry Potter and the Sorcerer\'s Stone',
+      author: 'J.K. Rowling',
+      cover: 'https://covers.openlibrary.org/b/id/7984916-L.jpg',
+      category: 'Fantasy',
+      description: 'The first book in the beloved wizarding series.',
+      pdf: null
+    },
+    {
+      id: 5,
+      title: 'The Hobbit',
+      author: 'J.R.R. Tolkien',
+      cover: 'https://covers.openlibrary.org/b/id/6979861-L.jpg',
+      category: 'Fantasy',
+      description: 'A fantasy adventure preceding the Lord of the Rings trilogy.',
+      pdf: null
+    }
+  ];
   let currentBooks = [...books];
 
+  function saveBooks() {
+    localStorage.setItem('books', JSON.stringify(books));
+  }
 
   function renderBooks() {
     bookGallery.innerHTML = '';
@@ -79,7 +123,6 @@ document.addEventListener('DOMContentLoaded', () => {
       bookGallery.appendChild(card);
     });
   }
-console.log('Rendering books:', currentBooks);
 
   categoryInput.addEventListener('change', () => {
     if (categoryInput.value === '__add_new__') {
@@ -105,8 +148,6 @@ console.log('Rendering books:', currentBooks);
   }
 
   function showDetails(id) {
-    
-    detailsDownloadBtn.href = book.pdfUrl;
     const book = books.find(b => b.id === id);
     if (!book) return;
     detailsCover.src = book.cover;
@@ -114,10 +155,18 @@ console.log('Rendering books:', currentBooks);
     detailsAuthor.textContent = book.author;
     detailsCategory.textContent = book.category;
     detailsDescription.textContent = book.description;
-    detailsDownloadBtn.style.display = book.pdfUrl ? 'inline-block' : 'none';
+    downloadPdfBtn.style.display = book.pdf ? 'block' : 'none';
+    if (book.pdf) {
+      downloadPdfBtn.onclick = () => {
+        const link = document.createElement('a');
+        link.href = book.pdf;
+        link.download = `${book.title}.pdf`;
+        link.click();
+      };
+    }
     detailsModal.style.display = 'flex';
   }
-  
+
   closeDetailsBtn.addEventListener('click', () => {
     detailsModal.style.display = 'none';
   });
@@ -131,12 +180,14 @@ console.log('Rendering books:', currentBooks);
       authorInput.value = book.author;
       categoryInput.value = book.category;
       descriptionInput.value = book.description;
+      fileInput.required = false;
     } else {
       bookIdInput.value = '';
       titleInput.value = '';
       authorInput.value = '';
       categoryInput.value = '';
       descriptionInput.value = '';
+      fileInput.required = true;
     }
     editModal.style.display = 'flex';
   }
@@ -145,62 +196,90 @@ console.log('Rendering books:', currentBooks);
     editModal.style.display = 'none';
   });
 
-  // async function getFirstPageImage(file) {
-  //   const fileReader = new FileReader();
-  //   return new Promise((resolve, reject) => {
-  //     fileReader.onload = async function () {
-  //       const typedarray = new Uint8Array(this.result);
-  //       const loadingTask = pdfjsLib.getDocument({ data: typedarray });
-  //       const pdf = await loadingTask.promise;
-  //       const page = await pdf.getPage(1);
-  //       const viewport = page.getViewport({ scale: 1.5 });
-  //       const canvas = document.createElement('canvas');
-  //       const context = canvas.getContext('2d');
-  //       canvas.height = viewport.height;
-  //       canvas.width = viewport.width;
-  //       await page.render({ canvasContext: context, viewport }).promise;
-  //       const imageDataUrl = canvas.toDataURL();
-  //       resolve(imageDataUrl);
-  //     };
-  //     fileReader.onerror = reject;
-  //     fileReader.readAsArrayBuffer(file);
-  //   });
-  // }
-async function getFirstPageImage(file) {
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-  const page = await pdf.getPage(1);
-  const viewport = page.getViewport({ scale: 1.5 });
+  async function getFirstPageImage(file) {
+    if (!window.pdfjsLib) {
+      alert('PDF.js failed to load. Please check your internet connection.');
+      return null;
+    }
+    const fileReader = new FileReader();
+    return new Promise((resolve, reject) => {
+      fileReader.onload = async function () {
+        const typedarray = new Uint8Array(this.result);
+        const loadingTask = pdfjsLib.getDocument({ data: typedarray });
+        const pdf = await loadingTask.promise;
+        const page = await pdf.getPage(1);
+        const viewport = page.getViewport({ scale: 1.5 });
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        await page.render({ canvasContext: context, viewport }).promise;
+        const imageDataUrl = canvas.toDataURL();
+        resolve(imageDataUrl);
+      };
+      fileReader.onerror = reject;
+      fileReader.readAsArrayBuffer(file);
+    });
+  }
 
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d');
-  canvas.height = viewport.height;
-  canvas.width = viewport.width;
-
-  await page.render({ canvasContext: context, viewport }).promise;
-  return canvas.toDataURL();
-}
+  async function uploadToCloudinary(file, resourceType = 'auto') {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', cloudinaryUploadPreset);
+    try {
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudinaryCloudName}/${resourceType}/upload`, {
+        method: 'POST',
+        body: formData
+      });
+      const data = await response.json();
+      if (data.secure_url) {
+        return data.secure_url;
+      } else {
+        throw new Error('Cloudinary upload failed');
+      }
+    } catch (error) {
+      console.error('Cloudinary upload error:', error);
+      alert('Failed to upload file to Cloudinary. Please try again.');
+      return null;
+    }
+  }
 
   bookForm.addEventListener('submit', async e => {
     e.preventDefault();
     const id = bookIdInput.value;
     const file = fileInput.files[0];
-    if (!file || file.type !== 'application/pdf') {
+    if (!id && (!file || file.type !== 'application/pdf')) {
       alert('Please upload a valid PDF file.');
       return;
     }
-   const coverImage = await getFirstPageImage(file);
-const pdfURL = await uploadPDFAndGetURL(file);
 
-const newBook = {
-  id: id ? parseInt(id) : Date.now(),
-  title: titleInput.value,
-  author: authorInput.value,
-  category: categoryInput.value,
-  description: descriptionInput.value,
-  cover: coverImage,
-  pdfUrl: pdfURL  // 🔥 New field
-};
+    let coverImage = books.find(b => b.id === parseInt(id))?.cover;
+    let pdfUrl = books.find(b => b.id === parseInt(id))?.pdf;
+
+    if (file) {
+      // Generate cover image from PDF
+      const coverDataUrl = await getFirstPageImage(file);
+      if (!coverDataUrl) return;
+
+      // Convert data URL to Blob for Cloudinary upload
+      const coverBlob = await (await fetch(coverDataUrl)).blob();
+      coverImage = await uploadToCloudinary(coverBlob, 'image');
+      if (!coverImage) return;
+
+      // Upload PDF to Cloudinary
+      pdfUrl = await uploadToCloudinary(file, 'raw');
+      if (!pdfUrl) return;
+    }
+
+    const newBook = {
+      id: id ? parseInt(id) : Date.now(),
+      title: titleInput.value,
+      author: authorInput.value,
+      category: categoryInput.value,
+      description: descriptionInput.value,
+      cover: coverImage,
+      pdf: pdfUrl
+    };
 
     if (id) {
       const index = books.findIndex(b => b.id === parseInt(id));
@@ -210,6 +289,7 @@ const newBook = {
     } else {
       books.push(newBook);
     }
+    saveBooks();
     currentBooks = [...books];
     renderBooks();
     editModal.style.display = 'none';
@@ -222,6 +302,7 @@ const newBook = {
         const index = books.findIndex(b => b.id === id);
         if (index > -1) {
           books.splice(index, 1);
+          saveBooks();
           applyFilters();
           alert('Book deleted.');
         }
@@ -249,3 +330,4 @@ const newBook = {
   addBookBtn.addEventListener('click', () => openEditModal(null));
   renderBooks();
 });
+
